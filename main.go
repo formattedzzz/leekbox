@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -63,6 +65,18 @@ func main() {
 			"msg":    "success",
 			"name":   name,
 			"userid": ctx.Query("userid"),
+		})
+	})
+	router.GET("/user/info/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			fmt.Println("id not found")
+		}
+		c.JSON(200, gin.H{
+			"code":    20000,
+			"messgae": "success",
+			"data":    []string{"leo", "bob"},
+			"id":      id,
 		})
 	})
 	router.Run(":7003")

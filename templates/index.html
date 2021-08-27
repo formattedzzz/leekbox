@@ -3,14 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>gin-boot</title>
     <script src="/static/leo.js"></script>
+    <script>
+      window.data = {{.}}
+      console.log(data)
+    </script>
   </head>
   <body>
     <h1 style="text-align: center">hello leooo! this is index page</h1>
-    <button>{{.data}}</button>
-    <button>{{.msg | format}}</button>
-    <button>{{.name}}</button>
-    <button>{{.userid}}</button>
+    {{ range $i, $v := .data }}
+    <h2 style="font-weight: 600">
+      <span style="color: #999">{{ $i }}&nbsp;</span>
+      <span>{{ $v.Id }}</span>
+      <span>{{ $v.Name }}</span>
+      <span>{{ $v.Desc }}</span>
+    </h2>
+    {{ end }}
   </body>
 </html>

@@ -1,0 +1,71 @@
+definitions:
+  handler.CheckForm:
+    properties:
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
+  handler.SignForm:
+    properties:
+      pass:
+        type: string
+      user_id:
+        type: string
+    required:
+    - pass
+    - user_id
+    type: object
+info:
+  contact: {}
+paths:
+  /api/user/check:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 结构体
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CheckForm'
+      summary: 检查用户名是否可用
+  /api/user/info:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      summary: 获取用户信息
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 结构体
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SignForm'
+      summary: 用户登录
+  /api/user/signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 结构体
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SignForm'
+      summary: 用户注册
+      tags:
+      - 用户相关
+swagger: "2.0"

@@ -1,8 +1,7 @@
-package handler
+package api
 
 import (
 	"fmt"
-	"leekbox/dao"
 	"leekbox/model"
 	"net/http"
 
@@ -10,6 +9,48 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// 用户相关事件回调中心
+type UserEvent struct {
+	AddedCallback []func(id int) error
+	DeledCallback []func(id int) error
+}
+
+func (this *UserEvent) RegisterAddEvent(cb func(uid int) error) {
+	this.AddedCallback = append(this.AddedCallback, cb)
+}
+func (this *UserEvent) DispatchAddEvent(uid int) error {
+	for _, cb := range this.AddedCallback {
+		if err := cb(uid); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (this *UserEvent) RegisterDelEvent(cb func(uid int) error) {
+	this.DeledCallback = append(this.DeledCallback, cb)
+}
+func (this *UserEvent) DispatchDelEvent(uid int) error {
+	for _, cb := range this.DeledCallback {
+		if err := cb(uid); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// 用户模块的操作数据库接口
+type UserDB interface {
+	CreateNewUser(user *model.User) (*model.User, error)
+	GetUserByUid(id string) (*model.User, error)
+	GetUserById(id int) (*model.User, error)
+	CheckUserExist(user_id string) bool
+}
+
+type UserAPI struct {
+	DB        UserDB
+	UserEvent *UserEvent
+}
 
 type SignForm struct {
 	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
@@ -19,12 +60,11 @@ type CheckForm struct {
 	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
 }
 
-// @Tags 用户相关
 // @Summary 用户注册
-// @Accept json
 // @Param body body SignForm true "结构体"
 // @Router /api/user/signup [post]
-func UserSignup(c *gin.Context) {
+// @Success 200 {object} model.Resp
+func (this *UserAPI) UserSignup(c *gin.Context) {
 	signdata := SignForm{}
 	if err := c.ShouldBind(&signdata); err != nil {
 		resp := model.Resp{
@@ -35,16 +75,14 @@ func UserSignup(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
-	fmt.Printf("%+v\n\n", signdata)
-	currentUser := model.User{}
-	dao.DB.First(&currentUser, "user_id = ?", signdata.UserId)
-	if currentUser.Id != 0 {
+	fmt.Printf("\n%+v\n", signdata)
+	if this.DB.CheckUserExist(signdata.UserId) {
 		resp := model.Resp{
 			Code:    40000,
 			Data:    nil,
 			Message: model.USER_EXISTED,
 		}
-		c.JSON(http.StatusBadRequest, resp)
+		c.JSON(http.StatusOK, resp)
 		return
 	}
 	newUser := model.User{
@@ -52,11 +90,11 @@ func UserSignup(c *gin.Context) {
 		Pass:   utils.MD5(signdata.Pass),
 	}
 	resp := model.Resp{}
-	if user, err := dao.CreateNewUser(&newUser); err != nil {
+	if user, err := this.DB.CreateNewUser(&newUser); err != nil {
 		resp.Code = 50000
 		resp.Message = err.Error()
 		resp.Data = nil
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusBadGateway, resp)
 	} else {
 		resp.Code = 20000
 		resp.Message = model.USER_SIGNUP_SUCCESS
@@ -66,10 +104,10 @@ func UserSignup(c *gin.Context) {
 }
 
 // @Summary 用户登录
-// @Accept json
 // @Param body body SignForm true "结构体"
 // @Router /api/user/login [post]
-func UserLogin(c *gin.Context) {
+// @Success 200 {object} model.Resp
+func (this *UserAPI) UserLogin(c *gin.Context) {
 	signdata := SignForm{}
 	if err := c.ShouldBind(&signdata); err != nil {
 		resp := model.Resp{
@@ -80,10 +118,9 @@ func UserLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
-	fmt.Printf("%+v\n\n", signdata)
-	currentUser := model.User{}
-	dao.DB.First(&currentUser, "user_id = ?", signdata.UserId)
-	if currentUser.Id == 0 {
+	fmt.Printf("\n%+v\n", signdata)
+	user, err := this.DB.GetUserByUid(signdata.UserId)
+	if err != nil {
 		resp := model.Resp{
 			Code:    40000,
 			Data:    nil,
@@ -93,14 +130,14 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 	resp := model.Resp{}
-	if currentUser.Pass != utils.MD5(signdata.Pass) {
+	if user.Pass != utils.MD5(signdata.Pass) {
 		resp.Code = 40000
 		resp.Data = nil
 		resp.Message = model.USER_PASS_INVALID
 		c.JSON(http.StatusOK, resp)
 		return
 	}
-	if token, err := GenToken(currentUser); err == nil {
+	if token, err := GenToken(*user); err == nil {
 		resp.Code = 20000
 		resp.Data = map[string]string{
 			"token": token,
@@ -116,10 +153,10 @@ func UserLogin(c *gin.Context) {
 }
 
 // @Summary 获取用户信息
-// @Accept json
-// @Param Authorization header string true "token"
+// @Security ApiKeyAuth
 // @Router /api/user/info [get]
-func GetUserInfo(c *gin.Context) {
+// @Success 200 {object} model.Resp
+func (this *UserAPI) GetUserInfo(c *gin.Context) {
 	// id, err := strconv.Atoi(c.Param("id"))
 	userInfo := c.MustGet("userInfo")
 	if userInfo == nil {
@@ -131,39 +168,38 @@ func GetUserInfo(c *gin.Context) {
 		c.JSON(http.StatusOK, resp)
 		return
 	}
+	uid := userInfo.(model.User).Id
 	resp := model.Resp{
 		Code:    20000,
-		Data:    dao.GetUserInfoById(userInfo.(model.User).Id),
+		Data:    nil,
 		Message: model.USER_INFO_SUCCEED,
 	}
+	if user, err := this.DB.GetUserById(uid); err != nil {
+		resp.Code = 40000
+		resp.Message = model.USER_NOT_EXISTED
+	} else {
+		resp.Data = user
+	}
 	c.JSON(http.StatusOK, resp)
-
 }
 
 // @Summary 检查用户名是否可用
-// @Accept json
 // @Param body body CheckForm true "结构体"
 // @Router /api/user/check [post]
-func CheckUserId(c *gin.Context) {
+// @Success 200 {object} model.Resp
+func (this *UserAPI) CheckUserId(c *gin.Context) {
 	checkform := CheckForm{}
 	if err := c.ShouldBind(&checkform); err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: err.Error(),
-		}
-		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
-	currentUser := model.User{}
-	dao.DB.First(&currentUser, "user_id = ?", checkform.UserId)
+	existed := this.DB.CheckUserExist(checkform.UserId)
 	resp := model.Resp{
 		Code: 20000,
 		Data: map[string]interface{}{
-			"existed": utils.If(currentUser.Id != 0, true, false),
+			"existed": existed,
 			"user_id": checkform.UserId,
 		},
-		Message: utils.If(currentUser.Id != 0, model.USER_EXISTED, model.USER_ACCESSIABLE).(string),
+		Message: utils.If(existed, model.USER_EXISTED, model.USER_ACCESSIABLE).(string),
 	}
 	c.JSON(http.StatusOK, resp)
 }

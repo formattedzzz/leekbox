@@ -1,5 +1,6 @@
 abandom/
-
+tmp/
+docs/
 .DS_store
 
 test-*

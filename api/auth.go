@@ -1,4 +1,4 @@
-package handler
+package api
 
 import (
 	"errors"
@@ -45,9 +45,7 @@ func ParseToken(token string) (*TokenBody, error) {
 	return nil, errors.New("invaild token")
 }
 
-type Ware = func(*gin.Context)
-
-func AuthMiddleWare() Ware {
+func AuthMiddleWare() func(*gin.Context) {
 	return func(c *gin.Context) {
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {

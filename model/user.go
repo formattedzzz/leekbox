@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	UNHANDLED_ERROR     = "发生未知错误"

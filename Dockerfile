@@ -1,0 +1,11 @@
+FROM mysql:8.0.19
+
+ENV AUTO_RUN_DIR /docker-entrypoint-initdb.d
+ENV INSTALL_DB_SH init-db.sh
+ENV INSTALL_DB_SQL init-db.sql
+
+ADD ./$INSTALL_DB_SH $AUTO_RUN_DIR/
+ADD ./$INSTALL_DB_SQL $AUTO_RUN_DIR/
+
+RUN chmod a+x $AUTO_RUN_DIR/$INSTALL_DB_SH
+RUN chmod a+x $AUTO_RUN_DIR/$INSTALL_DB_SQL

@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	"leekbox/config"
+	"leekbox/dao"
 	_ "leekbox/dao"
 	"leekbox/router"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
-var loc *time.Location
+var LOC *time.Location
 
 func init() {
 	initLoc()
@@ -17,12 +17,16 @@ func init() {
 
 func initLoc() {
 	if lac, err := time.LoadLocation("Asia/Shanghai"); err == nil {
-		loc = lac
-	} else {
-		fmt.Println(err)
+		LOC = lac
 	}
 }
 
+// @title LeekBox API
+// @version 1.0
+// @description Leekbox. a fabulous share-room.
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	recover := func() {
 		// 在必要的模块 panic之后需要重启一下
@@ -33,11 +37,21 @@ func main() {
 	}
 	defer recover()
 
-	app := gin.Default()
-	router.InitRouter(app)
-
-	err := app.Run(":7003")
+	config := config.Get()
+	db, err_db := dao.New(*config)
+	if err_db != nil {
+		panic(fmt.Errorf("数据库初始化失败%s", err_db))
+	}
+	app := router.Create(db, *config)
+	fmt.Println("----------LEEK_BOX----------")
+	fmt.Printf("-%26s-\n", "")
+	fmt.Printf("-%26s-\n", "")
+	fmt.Printf("-%26s-\n", "")
+	fmt.Printf("-%26s-\n", "")
+	fmt.Printf("-%26s-\n", "")
+	fmt.Printf("------------%5s-----------\n", config.VERSION)
+	err := app.Run(fmt.Sprintf(":%d", config.PORT))
 	if err != nil {
-		fmt.Println("something error", err)
+		fmt.Printf("go-app启动失败 %s", err)
 	}
 }

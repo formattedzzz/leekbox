@@ -87,34 +87,19 @@ func preHandleUserId(user_id string) (string, error) {
 func (this *UserAPI) UserSignup(c *gin.Context) {
 	signdata := SignForm{}
 	if err := c.ShouldBind(&signdata); err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: err.Error(),
-		}
-		c.JSON(http.StatusBadRequest, resp)
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
 	}
 	// 检查用户ID是否合法
 	if user_id, err := preHandleUserId(signdata.UserId); err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    user_id,
-			Message: err.Error(),
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, model.Return(40000, user_id, err.Error()))
 		return
 	} else {
 		signdata.UserId = user_id
 	}
 	fmt.Printf("\n%+v\n", signdata)
 	if this.DB.CheckUserExist(signdata.UserId) {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: model.USER_MSG.USER_EXISTED,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, model.Return(40000, nil, model.USER_MSG.USER_EXISTED))
 		return
 	}
 	newUser := model.User{
@@ -142,33 +127,20 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 func (this *UserAPI) UserLogin(c *gin.Context) {
 	loginData := LoginForm{}
 	if err := c.ShouldBind(&loginData); err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: err.Error(),
-		}
-		c.JSON(http.StatusBadRequest, resp)
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
 	}
 	fmt.Printf("\n%+v\n", loginData)
 	user, err := this.DB.GetUserByUid(loginData.UserId)
 	if err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: model.USER_MSG.USER_NOT_EXISTED,
-		}
-		c.JSON(http.StatusBadRequest, resp)
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, model.USER_MSG.USER_NOT_EXISTED))
+		return
+	}
+	if user.Pass != utils.MD5(loginData.Pass) {
+		c.JSON(http.StatusOK, model.Return(40000, nil, model.USER_MSG.USER_PASS_INVALID))
 		return
 	}
 	resp := model.Resp{}
-	if user.Pass != utils.MD5(loginData.Pass) {
-		resp.Code = 40000
-		resp.Data = nil
-		resp.Message = model.USER_MSG.USER_PASS_INVALID
-		c.JSON(http.StatusOK, resp)
-		return
-	}
 	if token, err := GenToken(*user); err == nil {
 		resp.Code = 20000
 		resp.Data = map[string]string{
@@ -189,15 +161,9 @@ func (this *UserAPI) UserLogin(c *gin.Context) {
 // @Router /api/user/info [get]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) GetUserInfo(c *gin.Context) {
-	// id, err := strconv.Atoi(c.Param("id"))
 	userInfo := c.MustGet("userInfo")
 	if userInfo == nil {
-		resp := model.Resp{
-			Code:    50000,
-			Data:    nil,
-			Message: model.UNHANDLED_ERROR,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
 		return
 	}
 	uid := userInfo.(model.User).Id

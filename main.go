@@ -5,6 +5,7 @@ import (
 	"leekbox/config"
 	"leekbox/dao"
 	_ "leekbox/dao"
+	"leekbox/model"
 	"leekbox/router"
 	"time"
 )
@@ -38,7 +39,8 @@ func main() {
 	defer recover()
 
 	config := config.Get()
-	db, err_db := dao.New(*config)
+	tableList := []interface{}{&model.User{}, &model.Room{}, &model.Comment{}}
+	db, err_db := dao.New(*config, tableList)
 	if err_db != nil {
 		panic(fmt.Errorf("数据库初始化失败%s", err_db))
 	}

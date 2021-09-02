@@ -20,9 +20,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 	indexHander := api.IndexAPI{DB: db}
 	roomHander := api.RoomAPI{DB: db}
 	app := gin.Default()
-	app.Use(api.AttachToken())
 	app.Static("/static", "static")
-	// 注册html模板 渲染过滤器 需要用到的html模板
 	app.SetFuncMap(utils.FuncMapUnion)
 	app.LoadHTMLGlob("templates/*.html")
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -31,6 +29,8 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 	})
 	app.GET("/index", indexHander.Index)
 
+	// /api开头的接口 有token的话默认取一下token
+	app.Use(api.AttachToken())
 	user := app.Group("/api/user")
 	{
 		user.GET("/info", api.AuthMiddleWare(), userHandler.GetUserInfo)

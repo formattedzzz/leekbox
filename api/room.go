@@ -13,6 +13,7 @@ import (
 type RoomDB interface {
 	GetRoomById(id int) (*model.RoomInfo, error)
 	CreateNewRoom(room *model.Room) (*model.Room, error)
+	UpdateRoomInfo(room *model.Room) error
 }
 
 type RoomAPI struct {
@@ -36,22 +37,12 @@ type RoomForm struct {
 func (this *RoomAPI) CreateNewRoom(c *gin.Context) {
 	body := RoomForm{}
 	if err := c.ShouldBind(&body); err != nil {
-		resp := model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: err.Error(),
-		}
-		c.JSON(http.StatusBadRequest, resp)
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
 	}
 	userInfo := c.MustGet("userInfo")
 	if userInfo == nil {
-		resp := model.Resp{
-			Code:    50000,
-			Data:    nil,
-			Message: model.UNHANDLED_ERROR,
-		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
 		return
 	}
 	uid := userInfo.(model.User).Id
@@ -67,45 +58,34 @@ func (this *RoomAPI) CreateNewRoom(c *gin.Context) {
 	if newRoom, err := this.DB.CreateNewRoom(room); err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 	} else {
-		c.JSON(http.StatusOK, model.Resp{
-			Code:    20000,
-			Data:    newRoom,
-			Message: model.API_SUCCESS,
-		})
+		c.JSON(http.StatusOK, model.Return(20000, newRoom, model.API_SUCCESS))
 	}
 }
 
 // @Summary 获取讨论组信息
+// @Param Authorization header string false "token"
 // @Param id path int true "讨论组ID"
 // @Router /api/room/{id} [get]
 // @Success 200 {object} model.Resp
 func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
-		c.JSON(http.StatusBadRequest, "请检查请求参数")
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, "请检查请求参数"))
 		return
 	}
 	fmt.Printf("id: %v\n", id)
 	if room, err := this.DB.GetRoomById(id); err != nil {
-		c.JSON(http.StatusOK, model.Resp{
-			Code:    40000,
-			Data:    nil,
-			Message: err.Error(),
-		})
+		c.JSON(http.StatusOK, model.Return(40000, nil, err.Error()))
 	} else {
+		// 该接口token为可带可不带
 		if authed, exist := c.Get("authed"); authed.(bool) == true && exist {
 			userInfo := c.MustGet("userInfo").(model.User)
-			fmt.Printf("userInfo: %v\n", userInfo)
 			if userInfo.Id == room.OwnerId {
 				room.IsOwner = true
 			} else {
 				room.IsOwner = false
 			}
 		}
-		c.JSON(http.StatusOK, model.Resp{
-			Code:    20000,
-			Data:    room,
-			Message: model.API_SUCCESS,
-		})
+		c.JSON(http.StatusOK, model.Return(20000, room, model.API_SUCCESS))
 	}
 }

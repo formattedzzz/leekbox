@@ -73,24 +73,14 @@ func AuthMiddleWare() gin.HandlerFunc {
 		fmt.Println("needAuth")
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
-			resp := model.Resp{
-				Code:    40100,
-				Data:    nil,
-				Message: "token为空",
-			}
 			c.Abort()
-			c.JSON(http.StatusForbidden, resp)
+			c.JSON(http.StatusForbidden, model.Return(40100, nil, "token为空"))
 			return
 		}
 		temp, err := ParseToken(authHeader)
 		if err != nil {
 			c.Abort()
-			c.JSON(http.StatusForbidden,
-				model.Resp{
-					Code:    40300,
-					Data:    nil,
-					Message: err.Error(),
-				})
+			c.JSON(http.StatusForbidden, model.Return(40300, nil, err.Error()))
 			return
 		}
 		c.Set("userInfo", temp.UserInfo)

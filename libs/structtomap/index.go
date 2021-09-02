@@ -5,9 +5,11 @@ import (
 	"reflect"
 )
 
+type SupMap map[string]interface{}
+
 // struct递归转换为map[string]interface{}
-func StructToMap(object interface{}, tagName string) (map[string]interface{}, error) {
-	resp := make(map[string]interface{})
+func StructToMap(object interface{}, tagName string) (SupMap, error) {
+	resp := SupMap{}
 	object_type := reflect.TypeOf(object)
 	object_value := reflect.ValueOf(object)
 	object_kind := object_type.Kind()
@@ -30,7 +32,7 @@ func StructToMap(object interface{}, tagName string) (map[string]interface{}, er
 		if field_name == "" {
 			field_name = field.Name
 		}
-		fmt.Println(field_type, field_value)
+		fmt.Println(field_type, field_value, field.Name)
 		if field_type != reflect.Struct {
 			resp[field_name] = field_value
 		} else {

@@ -1,0 +1,13 @@
+mode: set
+leekbox/libs/structtomap/index.go:11.70,16.32 5 1
+leekbox/libs/structtomap/index.go:22.2,22.35 1 1
+leekbox/libs/structtomap/index.go:27.2,27.46 1 1
+leekbox/libs/structtomap/index.go:44.2,44.18 1 1
+leekbox/libs/structtomap/index.go:16.32,21.3 3 1
+leekbox/libs/structtomap/index.go:22.35,25.3 1 1
+leekbox/libs/structtomap/index.go:27.46,32.23 5 1
+leekbox/libs/structtomap/index.go:35.3,36.35 2 1
+leekbox/libs/structtomap/index.go:32.23,34.4 1 1
+leekbox/libs/structtomap/index.go:36.35,38.4 1 1
+leekbox/libs/structtomap/index.go:38.9,39.66 1 1
+leekbox/libs/structtomap/index.go:39.66,41.5 1 1

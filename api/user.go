@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"leekbox/model"
 	"net/http"
+	"regexp"
 
 	"leekbox/utils"
 
@@ -52,12 +53,31 @@ type UserAPI struct {
 	UserEvent *UserEvent
 }
 
+type LoginForm struct {
+	UserId string `json:"user_id" form:"user_id" binding:"required"`
+	Pass   string `json:"pass" form:"pass" binding:"required"`
+}
 type SignForm struct {
-	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
-	Pass   string `json:"pass" xml:"pass" form:"pass" binding:"required"`
+	LoginForm
+	Repass string `json:"repass" form:"repass" binding:"required,eqfield=Pass"`
 }
 type CheckForm struct {
 	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
+}
+
+func preHandleUserId(user_id string) (string, error) {
+	if user_id == "" {
+		return "", fmt.Errorf("用户ID为空")
+	}
+	user_id = regexp.MustCompile(`^\s+`).ReplaceAllString(user_id, "")
+	user_id = regexp.MustCompile(`\s+$`).ReplaceAllString(user_id, "")
+	if match := regexp.MustCompile(`\s`).MatchString(user_id); match == true {
+		return "", fmt.Errorf("用户ID不能含有空格")
+	}
+	if match := regexp.MustCompile(`^\w+$`).MatchString(user_id); match == false {
+		return "", fmt.Errorf("用户ID只能包含字母数字下划线")
+	}
+	return user_id, nil
 }
 
 // @Summary 用户注册
@@ -75,12 +95,24 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
+	// 检查用户ID是否合法
+	if user_id, err := preHandleUserId(signdata.UserId); err != nil {
+		resp := model.Resp{
+			Code:    40000,
+			Data:    user_id,
+			Message: err.Error(),
+		}
+		c.JSON(http.StatusOK, resp)
+		return
+	} else {
+		signdata.UserId = user_id
+	}
 	fmt.Printf("\n%+v\n", signdata)
 	if this.DB.CheckUserExist(signdata.UserId) {
 		resp := model.Resp{
 			Code:    40000,
 			Data:    nil,
-			Message: model.USER_EXISTED,
+			Message: model.USER_MSG.USER_EXISTED,
 		}
 		c.JSON(http.StatusOK, resp)
 		return
@@ -94,22 +126,22 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 		resp.Code = 50000
 		resp.Message = err.Error()
 		resp.Data = nil
-		c.JSON(http.StatusBadGateway, resp)
+		c.JSON(http.StatusInternalServerError, resp)
 	} else {
 		resp.Code = 20000
-		resp.Message = model.USER_SIGNUP_SUCCESS
+		resp.Message = model.API_SUCCESS
 		resp.Data = user
 		c.JSON(http.StatusOK, resp)
 	}
 }
 
 // @Summary 用户登录
-// @Param body body SignForm true "结构体"
+// @Param body body LoginForm true "结构体"
 // @Router /api/user/login [post]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) UserLogin(c *gin.Context) {
-	signdata := SignForm{}
-	if err := c.ShouldBind(&signdata); err != nil {
+	loginData := LoginForm{}
+	if err := c.ShouldBind(&loginData); err != nil {
 		resp := model.Resp{
 			Code:    40000,
 			Data:    nil,
@@ -118,22 +150,22 @@ func (this *UserAPI) UserLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
-	fmt.Printf("\n%+v\n", signdata)
-	user, err := this.DB.GetUserByUid(signdata.UserId)
+	fmt.Printf("\n%+v\n", loginData)
+	user, err := this.DB.GetUserByUid(loginData.UserId)
 	if err != nil {
 		resp := model.Resp{
 			Code:    40000,
 			Data:    nil,
-			Message: model.USER_NOT_EXISTED,
+			Message: model.USER_MSG.USER_NOT_EXISTED,
 		}
 		c.JSON(http.StatusBadRequest, resp)
 		return
 	}
 	resp := model.Resp{}
-	if user.Pass != utils.MD5(signdata.Pass) {
+	if user.Pass != utils.MD5(loginData.Pass) {
 		resp.Code = 40000
 		resp.Data = nil
-		resp.Message = model.USER_PASS_INVALID
+		resp.Message = model.USER_MSG.USER_PASS_INVALID
 		c.JSON(http.StatusOK, resp)
 		return
 	}
@@ -142,7 +174,7 @@ func (this *UserAPI) UserLogin(c *gin.Context) {
 		resp.Data = map[string]string{
 			"token": token,
 		}
-		resp.Message = model.USER_LOGIN_SUCCESS
+		resp.Message = model.API_SUCCESS
 		c.JSON(http.StatusOK, resp)
 	} else {
 		resp.Code = 50000
@@ -172,11 +204,11 @@ func (this *UserAPI) GetUserInfo(c *gin.Context) {
 	resp := model.Resp{
 		Code:    20000,
 		Data:    nil,
-		Message: model.USER_INFO_SUCCEED,
+		Message: model.API_SUCCESS,
 	}
 	if user, err := this.DB.GetUserById(uid); err != nil {
 		resp.Code = 40000
-		resp.Message = model.USER_NOT_EXISTED
+		resp.Message = model.USER_MSG.USER_NOT_EXISTED
 	} else {
 		resp.Data = user
 	}
@@ -199,7 +231,7 @@ func (this *UserAPI) CheckUserId(c *gin.Context) {
 			"existed": existed,
 			"user_id": checkform.UserId,
 		},
-		Message: utils.If(existed, model.USER_EXISTED, model.USER_ACCESSIABLE).(string),
+		Message: utils.If(existed, model.USER_MSG.USER_EXISTED, model.API_SUCCESS).(string),
 	}
 	c.JSON(http.StatusOK, resp)
 }

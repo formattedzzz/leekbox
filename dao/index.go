@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"leekbox/config"
+	"leekbox/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,6 +20,9 @@ func New(conf config.Configuration) (*GormDB, error) {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
+	}
+	if err := db.AutoMigrate(&model.User{}, &model.Room{}, &model.Comment{}); err != nil {
+		panic(err)
 	}
 	sqlDB, _ := db.DB()
 	sqlDB.SetConnMaxIdleTime(10)

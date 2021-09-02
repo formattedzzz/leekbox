@@ -19,7 +19,7 @@ type TokenBody struct {
 var secret = []byte("leekbox")
 
 func GenToken(data interface{}) (string, error) {
-	const expiresDuration = time.Hour * 1
+	const expiresDuration = time.Hour * 24
 	conf := TokenBody{
 		UserInfo: data.(model.User),
 		StandardClaims: jwt.StandardClaims{
@@ -45,8 +45,32 @@ func ParseToken(token string) (*TokenBody, error) {
 	return nil, errors.New("invaild token")
 }
 
-func AuthMiddleWare() func(*gin.Context) {
+func AttachToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		authHeader := c.Request.Header.Get("Authorization")
+		if authHeader == "" {
+			c.Set("authed", false)
+		} else {
+			temp, err := ParseToken(authHeader)
+			if err != nil {
+				c.Set("authed", false)
+			} else {
+				c.Set("authed", true)
+				c.Set("userInfo", temp.UserInfo)
+				fmt.Println("authed")
+			}
+		}
+		c.Next()
+	}
+}
+
+func AuthMiddleWare() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if authed, exist := c.Get("authed"); authed.(bool) && exist {
+			c.Next()
+			return
+		}
+		fmt.Println("needAuth")
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
 			resp := model.Resp{
@@ -69,7 +93,6 @@ func AuthMiddleWare() func(*gin.Context) {
 				})
 			return
 		}
-		c.Set("tokenBody", temp)
 		c.Set("userInfo", temp.UserInfo)
 		c.Next()
 	}

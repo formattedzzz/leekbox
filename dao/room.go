@@ -20,13 +20,24 @@ func (this *GormDB) GetRoomById(id int) (*model.RoomInfo, error) {
 	if room.Id > 0 {
 		return &room, nil
 	} else {
-		return nil, fmt.Errorf("该讨论组不存在")
+		return nil, fmt.Errorf(model.ROOM_MSG.ROOM_NOT_EXIST)
 	}
 }
 
-func (this *GormDB) UpdateRoomInfo(room *model.Room) error {
-	if err := this.DB.Model(room).Updates(*room).Error; err != nil {
-		return err
+func (this *GormDB) UpdateRoomInfo(room *model.Room) (*model.Room, error) {
+	currentRoom := new(model.Room)
+	this.DB.Find(currentRoom, room.Id)
+	if currentRoom.Id > 0 {
+		if currentRoom.Deleted != 0 {
+			return nil, fmt.Errorf(model.ROOM_MSG.ROOM_DELETED)
+		}
+		if currentRoom.OwnerId != room.OwnerId {
+			return nil, fmt.Errorf(model.ROOM_MSG.ROOM_NOT_MATCH)
+		}
 	}
-	return nil
+	if err := this.DB.Model(room).Select("title", "desc", "avatar", "status", "deleted").Updates(*room).Error; err != nil {
+		return nil, err
+	}
+	this.DB.Find(currentRoom, room.Id)
+	return currentRoom, nil
 }

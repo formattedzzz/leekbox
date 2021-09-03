@@ -45,3 +45,10 @@ func (this *GormDB) GetUserList(page, limit int) ([]model.User, error) {
 	}
 	return users, nil
 }
+
+func (this *GormDB) UpdateUserInfo(user *model.User) (*model.User, error) {
+	if err := this.DB.Model(user).Select("nick_name", "desc", "avatar", "phone", "email").Updates(*user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}

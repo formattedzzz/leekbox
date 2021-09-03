@@ -33,15 +33,17 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 	app.Use(api.AttachToken())
 	user := app.Group("/api/user")
 	{
-		user.GET("/info", api.AuthMiddleWare(), userHandler.GetUserInfo)
 		user.POST("/check", userHandler.CheckUserId)
 		user.POST("/signup", userHandler.UserSignup)
 		user.POST("/login", userHandler.UserLogin)
+		user.GET("/info", api.AuthMiddleWare(), userHandler.GetUserInfo)
+		user.POST("/update", api.AuthMiddleWare(), userHandler.UpdateUserInfo)
 	}
 	room := app.Group("/api/room")
 	{
 		room.GET("/:id", roomHander.GetRoomInfo)
 		room.POST("/create", api.AuthMiddleWare(), roomHander.CreateNewRoom)
+		room.POST("/update", api.AuthMiddleWare(), roomHander.UpdateRoomInfo)
 	}
 	return app
 }

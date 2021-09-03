@@ -46,6 +46,7 @@ type UserDB interface {
 	GetUserByUid(id string) (*model.User, error)
 	GetUserById(id int) (*model.User, error)
 	CheckUserExist(user_id string) bool
+	UpdateUserInfo(user *model.User) (*model.User, error)
 }
 
 type UserAPI struct {
@@ -53,16 +54,27 @@ type UserAPI struct {
 	UserEvent *UserEvent
 }
 
-type LoginForm struct {
+type UserLoginForm struct {
 	UserId string `json:"user_id" form:"user_id" binding:"required"`
 	Pass   string `json:"pass" form:"pass" binding:"required"`
 }
-type SignForm struct {
-	LoginForm
-	Repass string `json:"repass" form:"repass" binding:"required,eqfield=Pass"`
+type UserSignForm struct {
+	UserId   string `json:"user_id" form:"user_id" binding:"required"`
+	Pass     string `json:"pass" form:"pass" binding:"required"`
+	Repass   string `json:"repass" form:"repass" binding:"required,eqfield=Pass"`
+	NickName string `json:"nick_name" form:"nick_name" binding:"required"`
 }
-type CheckForm struct {
+type UserCheckForm struct {
 	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
+}
+
+type UserUpdateForm struct {
+	Id       int    `json:"id" form:"id" binding:"gte=1,required"`
+	NickName string `json:"nick_name" form:"nick_name"`
+	Desc     string `json:"desc" form:"desc"`
+	Avatar   string `json:"avatar" form:"avatar"`
+	Email    string `json:"email" form:"email" binding:"email"`
+	Phone    string `json:"phone" form:"phone"`
 }
 
 func preHandleUserId(user_id string) (string, error) {
@@ -81,30 +93,31 @@ func preHandleUserId(user_id string) (string, error) {
 }
 
 // @Summary 用户注册
-// @Param body body SignForm true "结构体"
+// @Param body body UserSignForm true "结构体"
 // @Router /api/user/signup [post]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) UserSignup(c *gin.Context) {
-	signdata := SignForm{}
-	if err := c.ShouldBind(&signdata); err != nil {
+	body := UserSignForm{}
+	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
 	}
 	// 检查用户ID是否合法
-	if user_id, err := preHandleUserId(signdata.UserId); err != nil {
+	if user_id, err := preHandleUserId(body.UserId); err != nil {
 		c.JSON(http.StatusOK, model.Return(40000, user_id, err.Error()))
 		return
 	} else {
-		signdata.UserId = user_id
+		body.UserId = user_id
 	}
-	fmt.Printf("\n%+v\n", signdata)
-	if this.DB.CheckUserExist(signdata.UserId) {
+	fmt.Printf("\n%+v\n", body)
+	if this.DB.CheckUserExist(body.UserId) {
 		c.JSON(http.StatusOK, model.Return(40000, nil, model.USER_MSG.USER_EXISTED))
 		return
 	}
 	newUser := model.User{
-		UserId: signdata.UserId,
-		Pass:   utils.MD5(signdata.Pass),
+		UserId:   body.UserId,
+		Pass:     utils.MD5(body.Pass),
+		NickName: body.NickName,
 	}
 	resp := model.Resp{}
 	if user, err := this.DB.CreateNewUser(&newUser); err != nil {
@@ -120,12 +133,48 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 	}
 }
 
+// @Summary 修改用户信息
+// @Security ApiKeyAuth
+// @Param body body UserUpdateForm true "结构体"
+// @Router /api/user/update [post]
+// @Success 200 {object} model.Resp
+func (this *UserAPI) UpdateUserInfo(c *gin.Context) {
+	body := UserUpdateForm{}
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
+		return
+	}
+	userInfo := c.MustGet("userInfo")
+	if userInfo == nil {
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
+		return
+	}
+	uid := userInfo.(model.User).Id
+	if uid != body.Id {
+		c.JSON(http.StatusForbidden, model.Return(40300, nil, model.USER_MSG.USER_FORBIDDEN))
+		return
+	}
+	fmt.Printf("\n%+v\n", body)
+	updateUser := new(model.User)
+	updateUser.Id = uid
+	updateUser.Avatar = body.Avatar
+	updateUser.NickName = body.NickName
+	updateUser.Desc = body.Desc
+	updateUser.Email = body.Email
+	updateUser.Phone = body.Phone
+	if user, err := this.DB.UpdateUserInfo(updateUser); err != nil {
+		c.JSON(http.StatusInternalServerError, model.Return(50000, nil, err.Error()))
+	} else {
+		c.JSON(http.StatusOK, model.Return(50000, user, model.API_SUCCESS))
+	}
+}
+
 // @Summary 用户登录
-// @Param body body LoginForm true "结构体"
+// @Param body body UserLoginForm true "结构体"
 // @Router /api/user/login [post]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) UserLogin(c *gin.Context) {
-	loginData := LoginForm{}
+	loginData := UserLoginForm{}
 	if err := c.ShouldBind(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
@@ -182,11 +231,11 @@ func (this *UserAPI) GetUserInfo(c *gin.Context) {
 }
 
 // @Summary 检查用户名是否可用
-// @Param body body CheckForm true "结构体"
+// @Param body body UserCheckForm true "结构体"
 // @Router /api/user/check [post]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) CheckUserId(c *gin.Context) {
-	checkform := CheckForm{}
+	checkform := UserCheckForm{}
 	if err := c.ShouldBind(&checkform); err != nil {
 		return
 	}

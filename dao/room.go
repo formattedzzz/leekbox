@@ -12,6 +12,13 @@ func (this *GormDB) CreateNewRoom(room *model.Room) (*model.Room, error) {
 	return room, nil
 }
 
+func (this *GormDB) CreateNewComment(comment *model.Comment) (*model.Comment, error) {
+	if err := this.DB.Create(comment).Error; err != nil {
+		return nil, err
+	}
+	return comment, nil
+}
+
 func (this *GormDB) GetRoomById(id int) (*model.RoomInfo, error) {
 	room := model.RoomInfo{}
 	if err := this.DB.Table("rooms").Model(&room).Preload("Owner").Find(&room, "id = ? and deleted = ?", id, 0).Error; err != nil {

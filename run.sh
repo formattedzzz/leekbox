@@ -6,15 +6,18 @@ mkdir -p $HOME/.leekbox
 
 LEEKBOX_HOME=$HOME/.leekbox
 
-init=false
+init=0
+initVolumn() {
+  for param in "$@"; do
+    if [ $param == '--init' ]; then
+      init=true
+    fi
+  done
+}
 
-for param in "$@"; do
-  if [ $param == '--init' ]; then
-    init=true
-  fi
-done
+initVolumn "$@"
 
-if [ "$init" == true ]; then
+if [ $init == true ]; then
   echo '格式化除宿主机数据库数据卷'
   volumns=("mysql-etc" "mysql-lib" "mysql-files")
   for file in ${volumns[*]}; do

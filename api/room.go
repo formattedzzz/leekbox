@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"leekbox/api/stream"
 	"leekbox/model"
 	"net/http"
 	"strconv"
@@ -14,10 +15,12 @@ type RoomDB interface {
 	GetRoomById(id int) (*model.RoomInfo, error)
 	CreateNewRoom(room *model.Room) (*model.Room, error)
 	UpdateRoomInfo(room *model.Room) (*model.Room, error)
+	CreateNewComment(comment *model.Comment) (*model.Comment, error)
 }
 
 type RoomAPI struct {
-	DB RoomDB
+	DB     RoomDB
+	Stream *stream.StreamAPI
 }
 
 type RoomCreateForm struct {
@@ -80,7 +83,7 @@ func (this *RoomAPI) CreateNewRoom(c *gin.Context) {
 func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id == 0 {
-		c.JSON(http.StatusBadRequest, model.Return(40000, nil, "请检查请求参数"))
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, model.PARAMS_ERROR))
 		return
 	}
 	fmt.Printf("id: %v\n", id)
@@ -103,7 +106,7 @@ func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 // @Summary 修改讨论组
 // @Param body body RoomUpdateForm true "结构体"
 // @Security ApiKeyAuth
-// @Router /api/room/update [post]
+// @Router /api/room/update [put]
 // @Success 200 {object} model.Resp
 func (this *RoomAPI) UpdateRoomInfo(c *gin.Context) {
 	body := RoomUpdateForm{}
@@ -133,5 +136,47 @@ func (this *RoomAPI) UpdateRoomInfo(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, model.Return(50000, nil, err.Error()))
 	} else {
 		c.JSON(http.StatusOK, model.Return(20000, room, model.API_SUCCESS))
+	}
+}
+
+type CommentCreateForm struct {
+	RoomId  int    `json:"room_id" form:"room_id" binding:"required"`
+	Type    int    `json:"type" form:"type"`
+	Content string `json:"content" form:"content" binding:"required"`
+	Attach  string `json:"attach" form:"attach"`
+}
+
+// @Summary 创建发言
+// @Param body body CommentCreateForm true "结构体"
+// @Security ApiKeyAuth
+// @Router /api/comment/create [post]
+// @Success 200 {object} model.Resp
+func (this *RoomAPI) CreateNewComment(c *gin.Context) {
+	body := CommentCreateForm{}
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
+		return
+	}
+	userInfo := c.MustGet("userInfo")
+	if userInfo == nil {
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
+		return
+	}
+	uid := userInfo.(model.User).Id
+	comment := new(model.Comment)
+	comment.Uid = uid
+	comment.Content = body.Content
+	comment.RoomId = body.RoomId
+	comment.Attach = body.Attach
+	comment.Type = body.Type
+	if newComment, err := this.DB.CreateNewComment(comment); err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+	} else {
+		c.JSON(http.StatusOK, model.Return(20000, newComment, model.API_SUCCESS))
+	}
+	if client_list, ok := this.Stream.RoomClient[comment.RoomId]; ok {
+		for _, client := range client_list {
+			client.Sender <- comment
+		}
 	}
 }

@@ -32,3 +32,14 @@ type RoomInfo struct {
 	IsOwner bool `json:"is_owner"`
 	Owner   User `gorm:"foreignKey:OwnerId;references:Id" json:"owner,omitempty"`
 }
+
+type Comment struct {
+	Id        int       `json:"id" gorm:"primary_key;autoIncrement"`
+	Uid       int       `json:"uid" gorm:"not null"`
+	RoomId    int       `json:"room_id" gorm:"not null"`
+	Type      int       `json:"type" gorm:"type:tinyint;default:0"`
+	Content   string    `json:"content" gorm:"type:text"`
+	Attach    string    `json:"attach" gorm:"type:text"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"leekbox/api/auth"
 	"leekbox/model"
 	"net/http"
 	"regexp"
@@ -136,7 +137,7 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 // @Summary 修改用户信息
 // @Security ApiKeyAuth
 // @Param body body UserUpdateForm true "结构体"
-// @Router /api/user/update [post]
+// @Router /api/user/update [put]
 // @Success 200 {object} model.Resp
 func (this *UserAPI) UpdateUserInfo(c *gin.Context) {
 	body := UserUpdateForm{}
@@ -190,7 +191,7 @@ func (this *UserAPI) UserLogin(c *gin.Context) {
 		return
 	}
 	resp := model.Resp{}
-	if token, err := GenToken(*user); err == nil {
+	if token, err := auth.GenToken(*user); err == nil {
 		resp.Code = 20000
 		resp.Data = map[string]string{
 			"token": token,

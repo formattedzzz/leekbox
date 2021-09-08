@@ -36,6 +36,7 @@ type RoomInfo struct {
 type Comment struct {
 	Id        int       `json:"id" gorm:"primary_key;autoIncrement"`
 	Uid       int       `json:"uid" gorm:"not null"`
+	Atsb      int       `json:"atsb" gorm:"default:0"`
 	RoomId    int       `json:"room_id" gorm:"not null"`
 	Type      int       `json:"type" gorm:"type:tinyint;default:0"`
 	Content   string    `json:"content" gorm:"type:text"`
@@ -44,7 +45,17 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 }
 
-type CommentWithUser struct {
+// 评论记录
+type CommentItem struct {
 	*Comment
-	User User `json:"user"`
+	IsOwner bool  `json:"is_owner"`
+	Owner   *User `json:"owner" gorm:"foreignKey:Uid;references:Id"`
+	Refer   *User `json:"refer" gorm:"foreignKey:Atsb;references:Id"`
+}
+
+// 实时推送给client管道的消息
+type CommentMessage struct {
+	*Comment
+	User  User  `json:"user"`
+	Refer *User `json:"refer"`
 }

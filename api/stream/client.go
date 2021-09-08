@@ -59,6 +59,7 @@ type Client struct {
 
 func (this *Client) Close() {
 	this.Conn.Close()
+	close(this.Sender)
 	this.OnClose(this)
 }
 
@@ -76,7 +77,6 @@ func NewClient(hub *StreamAPI, conn *websocket.Conn, room_id int, on_close func(
 func (this *Client) ReadPump() {
 	defer func() {
 		fmt.Println("read-pump-ended")
-		close(this.Sender)
 		this.Close()
 	}()
 	fmt.Println("read-pump...")
@@ -108,7 +108,6 @@ func (this *Client) WritePump() {
 	defer func() {
 		fmt.Println("write-pump-ended")
 		pingTick.Stop()
-		this.Close()
 	}()
 	fmt.Println("write-pump...")
 	for {
@@ -118,7 +117,7 @@ func (this *Client) WritePump() {
 				this.Conn.WriteMessage(websocket.CloseMessage, nil)
 				return
 			}
-			fmt.Printf("comment: %+v\n", message.(model.CommentWithUser).Content)
+			fmt.Printf("comment: %+v\n", message.(model.CommentMessage).Content)
 			if err := this.SendMessage(MESSAGE_RESP_OK, message); err != nil {
 				return
 			}

@@ -6,6 +6,7 @@ import (
 	"leekbox/model"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"leekbox/utils"
 
@@ -56,34 +57,33 @@ type UserAPI struct {
 }
 
 type UserLoginForm struct {
-	UserId string `json:"user_id" form:"user_id" binding:"required"`
-	Pass   string `json:"pass" form:"pass" binding:"required"`
+	UserId string `json:"user_id" form:"user_id" binding:"required" example:"user_12138"`
+	Pass   string `json:"pass" form:"pass" binding:"required" example:"@leekbox123"`
 }
 type UserSignForm struct {
-	UserId   string `json:"user_id" form:"user_id" binding:"required"`
-	Pass     string `json:"pass" form:"pass" binding:"required"`
-	Repass   string `json:"repass" form:"repass" binding:"required,eqfield=Pass"`
-	NickName string `json:"nick_name" form:"nick_name" binding:"required"`
+	UserId   string `json:"user_id" form:"user_id" binding:"required" example:"user_12138"`
+	Pass     string `json:"pass" form:"pass" binding:"required" example:"@leekbox123"`
+	Repass   string `json:"repass" form:"repass" binding:"required,eqfield=Pass" example:"@leekbox123"`
+	NickName string `json:"nick_name" form:"nick_name" binding:"required" example:"韭菜青年"`
 }
 type UserCheckForm struct {
-	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required"`
+	UserId string `json:"user_id" xml:"user_id" form:"user_id" binding:"required" example:"user_12138"`
 }
 
 type UserUpdateForm struct {
-	Id       int    `json:"id" form:"id" binding:"gte=1,required"`
-	NickName string `json:"nick_name" form:"nick_name"`
-	Desc     string `json:"desc" form:"desc"`
-	Avatar   string `json:"avatar" form:"avatar"`
-	Email    string `json:"email" form:"email" binding:"email"`
-	Phone    string `json:"phone" form:"phone"`
+	Id       int    `json:"id" form:"id" binding:"gte=1,required" example:"38"`
+	NickName string `json:"nick_name" form:"nick_name" example:"韭菜大叔"`
+	Desc     string `json:"desc" form:"desc" example:"韭菜长大了～"`
+	Avatar   string `json:"avatar" form:"avatar" example:"https://theshy.cc/img/avatar.png"`
+	Email    string `json:"email" form:"email" binding:"email" example:"leekbox123@qq.com"`
+	Phone    string `json:"phone" form:"phone" example:"18899996666"`
 }
 
 func preHandleUserId(user_id string) (string, error) {
 	if user_id == "" {
 		return "", fmt.Errorf("用户ID为空")
 	}
-	user_id = regexp.MustCompile(`^\s+`).ReplaceAllString(user_id, "")
-	user_id = regexp.MustCompile(`\s+$`).ReplaceAllString(user_id, "")
+	user_id = strings.Trim(user_id, " ")
 	if match := regexp.MustCompile(`\s`).MatchString(user_id); match == true {
 		return "", fmt.Errorf("用户ID不能含有空格")
 	}

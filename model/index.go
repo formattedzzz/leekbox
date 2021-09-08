@@ -15,3 +15,8 @@ const (
 	UNHANDLED_ERROR = "发生未知错误"
 	PARAMS_ERROR    = "请检查请求参数"
 )
+
+type CommonList struct {
+	Items []interface{}
+	Total int
+}

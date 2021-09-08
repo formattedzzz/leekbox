@@ -21,7 +21,7 @@ func (this *GormDB) CreateNewComment(comment *model.Comment) (*model.Comment, er
 
 func (this *GormDB) GetRoomById(id int) (*model.RoomInfo, error) {
 	room := new(model.RoomInfo)
-	if err := this.DB.Table("rooms").Model(room).Preload("Owner").Find(room, "id = ? and deleted = ?", id, 0).Error; err != nil {
+	if err := this.DB.Debug().Table("rooms").Model(room).Preload("Owner").Find(room, "id = ? and deleted = ?", id, 0).Error; err != nil {
 		return nil, err
 	}
 	if room.Id > 0 {
@@ -29,6 +29,15 @@ func (this *GormDB) GetRoomById(id int) (*model.RoomInfo, error) {
 	} else {
 		return nil, fmt.Errorf(model.ROOM_MSG.ROOM_NOT_EXIST)
 	}
+}
+
+func (this *GormDB) GetRoomComments(room_id int, page int, limit int) ([]*model.CommentItem, error) {
+	comments := []*model.CommentItem{}
+	offset := limit * (page - 1)
+	if err := this.DB.Debug().Table("comments").Model(&comments).Preload("Owner").Preload("Refer").Limit(limit).Offset(offset).Find(&comments, "room_id = ?", room_id).Error; err != nil {
+		return nil, err
+	}
+	return comments, nil
 }
 
 func (this *GormDB) UpdateRoomInfo(room *model.Room) (*model.Room, error) {

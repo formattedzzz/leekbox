@@ -12,10 +12,12 @@ import (
 
 // 用户模块的操作数据库接口
 type RoomDB interface {
+	GetUserById(uid int) (*model.User, error)
 	GetRoomById(id int) (*model.RoomInfo, error)
 	CreateNewRoom(room *model.Room) (*model.Room, error)
 	UpdateRoomInfo(room *model.Room) (*model.Room, error)
 	CreateNewComment(comment *model.Comment) (*model.Comment, error)
+	GetRoomComments(room_id int, page int, limit int) ([]*model.CommentItem, error)
 }
 
 type RoomAPI struct {
@@ -24,23 +26,23 @@ type RoomAPI struct {
 }
 
 type RoomCreateForm struct {
-	OwnerId int    `json:"owner_id" form:"owner_id"`
-	Title   string `json:"title" form:"title" binding:"required"`
-	Desc    string `json:"desc" form:"desc"`
-	Avatar  string `json:"avatar" gorm:"avatar"`
-	Status  int    `json:"status" form:"status"`
-	Dev     bool   `json:"dev" form:"dev"`
+	OwnerId int    `json:"owner_id" form:"owner_id" example:"35"`
+	Title   string `json:"title" form:"title" binding:"required" example:"韭菜盒子直播间"`
+	Desc    string `json:"desc" form:"desc" example:"来点介绍吧"`
+	Avatar  string `json:"avatar" gorm:"avatar" example:"https://theshy.cc/img/avatar.png"`
+	Status  int    `json:"status" form:"status" example:"0"`
+	Dev     bool   `json:"dev" form:"dev" example:"false"`
 }
 
 // swagger:model RoomUpdateForm
 type RoomUpdateForm struct {
-	Id      int    `json:"id" form:"id" binding:"gte=1,required"`
-	OwnerId int    `json:"owner_id" form:"owner_id" binding:"required"`
-	Title   string `json:"title" form:"title" binding:"required"`
-	Desc    string `json:"desc" form:"desc"`
-	Avatar  string `json:"avatar" form:"avatar"`
-	Status  int    `json:"status" form:"status"`
-	Deleted int    `json:"deleted" form:"deleted"`
+	Id      int    `json:"id" form:"id" binding:"gte=1,required" example:"1"`
+	OwnerId int    `json:"owner_id" form:"owner_id" binding:"required" example:"35"`
+	Title   string `json:"title" form:"title" binding:"required" example:"新名称"`
+	Desc    string `json:"desc" form:"desc" example:"新简介"`
+	Avatar  string `json:"avatar" form:"avatar" example:"https://theshy.cc/img/avatar.png"`
+	Status  int    `json:"status" form:"status" example:"0"`
+	Deleted int    `json:"deleted" form:"deleted" example:"0"`
 }
 
 // @Summary 创建讨论组
@@ -142,10 +144,11 @@ func (this *RoomAPI) UpdateRoomInfo(c *gin.Context) {
 }
 
 type CommentCreateForm struct {
-	RoomId  int    `json:"room_id" form:"room_id" binding:"required"`
-	Type    int    `json:"type" form:"type"`
-	Content string `json:"content" form:"content" binding:"required"`
-	Attach  string `json:"attach" form:"attach"`
+	RoomId  int    `json:"room_id" form:"room_id" binding:"required" example:"1"`
+	Type    int    `json:"type" form:"type" example:"0"`
+	Atsb    int    `json:"atsb" form:"atsb" example:"0"`
+	Content string `json:"content" form:"content" binding:"required" example:"说点儿好听的吧～"`
+	Attach  string `json:"attach" form:"attach" example:"{}"`
 }
 
 // @Summary 创建发言
@@ -171,10 +174,59 @@ func (this *RoomAPI) CreateNewComment(c *gin.Context) {
 	comment.RoomId = body.RoomId
 	comment.Attach = body.Attach
 	comment.Type = body.Type
+	comment.Atsb = body.Atsb
 	if newComment, err := this.DB.CreateNewComment(comment); err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 	} else {
 		c.JSON(http.StatusOK, model.Return(20000, newComment, model.API_SUCCESS))
 	}
-	this.Stream.PushRoomComment(comment, userInfo.(model.User))
+	var atsb *model.User = nil
+	if comment.Atsb > 0 {
+		if usr, err := this.DB.GetUserById(comment.Atsb); err == nil {
+			atsb = usr
+		}
+	}
+	this.Stream.PushRoomComment(comment, userInfo.(model.User), atsb)
+}
+
+type CommentQueryForm struct {
+	Page   int `json:"page" form:"page" example:"1"`
+	Limit  int `json:"limit" form:"limit" example:"30"`
+	RoomId int `json:"room_id" form:"room_id" binding:"required"`
+}
+
+// @Summary 获取讨论组历史发言
+// @Param Authorization header string false "token"
+// @Param room_id query string true "讨论组ID"
+// @Param limit query string false "limit" mininum(30) maxinum(100) default(30)
+// @Param page query string false "page" mininum(1) default(1)
+// @Router /api/room/comments [get]
+// @Success 200 {object} model.Resp
+func (this *RoomAPI) GetRoomComments(c *gin.Context) {
+	query := new(CommentQueryForm)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
+		return
+	}
+	if query.Limit == 0 {
+		query.Limit = 30
+	}
+	if query.Page == 0 {
+		query.Page = 1
+	}
+	fmt.Printf("query: %v\n", query)
+	if comments, err := this.DB.GetRoomComments(query.RoomId, query.Page, query.Limit); err != nil {
+		c.JSON(http.StatusInternalServerError, model.Return(50000, query, err.Error()))
+	} else {
+		if authed, exist := c.Get("authed"); authed.(bool) == true && exist {
+			userInfo := c.MustGet("userInfo").(model.User)
+			// 对切片循环需要注意 如果元素不是指针类型的结构体 遍历中的item是个副本
+			for _, comment := range comments {
+				if comment.Uid == userInfo.Id {
+					comment.IsOwner = true
+				}
+			}
+		}
+		c.JSON(http.StatusOK, model.Return(20000, comments, model.API_SUCCESS))
+	}
 }

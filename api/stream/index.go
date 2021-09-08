@@ -56,12 +56,13 @@ func (this *StreamAPI) RegisterClient(client *Client) {
 	this.RoomClient[client.RoomId] = append(this.RoomClient[client.RoomId], client)
 }
 
-func (this *StreamAPI) PushRoomComment(comment *model.Comment, userInfo model.User) {
+func (this *StreamAPI) PushRoomComment(comment *model.Comment, userInfo model.User, refer *model.User) {
 	if client_list, ok := this.RoomClient[comment.RoomId]; ok {
 		for _, client := range client_list {
-			client.Sender <- model.CommentWithUser{
+			client.Sender <- model.CommentMessage{
 				Comment: comment,
 				User:    userInfo,
+				Refer:   refer,
 			}
 		}
 	}

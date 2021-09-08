@@ -47,6 +47,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 	room := app.Group("/api/room")
 	{
 		room.GET("/:id", roomHander.GetRoomInfo)
+		room.GET("/comments", roomHander.GetRoomComments)
 		room.POST("/create", auth.AuthMiddleWare(), roomHander.CreateNewRoom)
 		room.PUT("/update", auth.AuthMiddleWare(), roomHander.UpdateRoomInfo)
 	}

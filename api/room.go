@@ -32,6 +32,7 @@ type RoomCreateForm struct {
 	Dev     bool   `json:"dev" form:"dev"`
 }
 
+// swagger:model RoomUpdateForm
 type RoomUpdateForm struct {
 	Id      int    `json:"id" form:"id" binding:"gte=1,required"`
 	OwnerId int    `json:"owner_id" form:"owner_id" binding:"required"`
@@ -104,6 +105,7 @@ func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 }
 
 // @Summary 修改讨论组
+// @Description 删除讨论组时deleted=1 此操作不可逆
 // @Param body body RoomUpdateForm true "结构体"
 // @Security ApiKeyAuth
 // @Router /api/room/update [put]
@@ -174,9 +176,5 @@ func (this *RoomAPI) CreateNewComment(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, model.Return(20000, newComment, model.API_SUCCESS))
 	}
-	if client_list, ok := this.Stream.RoomClient[comment.RoomId]; ok {
-		for _, client := range client_list {
-			client.Sender <- comment
-		}
-	}
+	this.Stream.PushRoomComment(comment, userInfo.(model.User))
 }

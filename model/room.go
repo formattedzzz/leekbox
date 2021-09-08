@@ -23,12 +23,12 @@ type Room struct {
 	Avatar    string    `json:"avatar" gorm:"type:varchar(255);default:''"`
 	Status    int       `json:"status" gorm:"type:tinyint;default:0"`
 	Deleted   int       `json:"deleted" gorm:"type:tinyint;default:0"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	UpdatedAt time.Time `json:"-" gorm:"autoUpdateTime"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 }
 
 type RoomInfo struct {
-	Room
+	*Room
 	IsOwner bool `json:"is_owner"`
 	Owner   User `gorm:"foreignKey:OwnerId;references:Id" json:"owner,omitempty"`
 }
@@ -40,6 +40,11 @@ type Comment struct {
 	Type      int       `json:"type" gorm:"type:tinyint;default:0"`
 	Content   string    `json:"content" gorm:"type:text"`
 	Attach    string    `json:"attach" gorm:"type:text"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	UpdatedAt time.Time `json:"-" gorm:"autoUpdateTime"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+}
+
+type CommentWithUser struct {
+	*Comment
+	User User `json:"user"`
 }

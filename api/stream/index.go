@@ -56,23 +56,37 @@ func (this *StreamAPI) RegisterClient(client *Client) {
 	this.RoomClient[client.RoomId] = append(this.RoomClient[client.RoomId], client)
 }
 
-// @Summary 讨论组发言流[websocket]
+func (this *StreamAPI) PushRoomComment(comment *model.Comment, userInfo model.User) {
+	if client_list, ok := this.RoomClient[comment.RoomId]; ok {
+		for _, client := range client_list {
+			client.Sender <- model.CommentWithUser{
+				Comment: comment,
+				User:    userInfo,
+			}
+		}
+	}
+}
+
+// @Summary 讨论组发言流websocket
 // @Param room_id query string true "讨论组ID"
 // @Description 客户端接口示例
 // @Description ws = new WebSocket("ws://host:port/api/stream?room_id=1")
-// @Description ws.addEventListener("message", ev => console.log("message:", ev.data))
 // @Description ws.addEventListener("close", console.log)
+// @Description ws.addEventListener("error", console.log)
+// @Description ws.addEventListener("message", ev => console.log("message:", ev.data))
 // @Description ws.addEventListener("open", ev => {
 // @Description
-// @Description   console.log("open", ev)
-// @Description   ws.send(JSON.stringify({ data: "用户token", type: "LOGIN" }))
-// @Description   ws.send(JSON.stringify({ data: "", type: "MESSAGE" }))
-// @Description   window.wstimer = setInterval(() => {
-// @Description     ws.send(JSON.stringify({ data: "the-ping-mark", type: "PING" }))
-// @Description   }, 20000)
+// @Description   console.log("连接成功")
+// @Description		连接鉴权
+// @Description   ws.send(JSON.stringify({ data: "user-token", type: "LOGIN" }))
+// @Description		发送临时消息
+// @Description   ws.send(JSON.stringify({ data: "hello world!", type: "MESSAGE" }))
+// @Description		发送心跳包
+// @Description   ws.send(JSON.stringify({ data: "", type: "PING" }))
+// @Description		发送临时特效代码
+// @Description   ws.send(JSON.stringify({ data: "1", type: "EFFECT" }))
 // @Description
 // @Description })
-// @Description ws.addEventListener("error", console.log)
 // @Router /api/stream [get]
 func (this *StreamAPI) Handler(ctx *gin.Context) {
 	room_id := 0
@@ -87,7 +101,7 @@ func (this *StreamAPI) Handler(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
 		return
 	}
-	client := NewClient(conn, room_id, this.RemoveClient)
+	client := NewClient(this, conn, room_id, this.RemoveClient)
 	this.RegisterClient(client)
 	fmt.Printf("client: %v\n", *client)
 	go client.ReadPump()

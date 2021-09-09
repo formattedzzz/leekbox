@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -21,19 +20,15 @@ var (
 )
 
 type StreamAPI struct {
-	RoomClient  map[int][]*Client
-	lock        sync.RWMutex
-	PingPeriod  time.Duration
-	PongTimeout time.Duration
-	Upgrader    *websocket.Upgrader
+	RoomClient map[int][]*Client
+	lock       sync.RWMutex
+	Upgrader   *websocket.Upgrader
 }
 
-func New(ping time.Duration, pong time.Duration, allowed_origins []string) *StreamAPI {
+func New(allowed_origins []string) *StreamAPI {
 	return &StreamAPI{
-		RoomClient:  make(map[int][]*Client),
-		PingPeriod:  ping,
-		PongTimeout: ping + pong,
-		Upgrader:    newUpgrader(allowed_origins),
+		RoomClient: make(map[int][]*Client),
+		Upgrader:   newUpgrader(allowed_origins),
 	}
 }
 
@@ -68,6 +63,7 @@ func (this *StreamAPI) PushRoomComment(comment *model.Comment, userInfo model.Us
 	}
 }
 
+// @Tags 讨论组
 // @Summary 讨论组发言流websocket
 // @Param room_id query string true "讨论组ID"
 // @Description 客户端接口示例

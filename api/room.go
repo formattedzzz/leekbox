@@ -18,6 +18,9 @@ type RoomDB interface {
 	UpdateRoomInfo(room *model.Room) (*model.Room, error)
 	CreateNewComment(comment *model.Comment) (*model.Comment, error)
 	GetRoomComments(room_id int, page int, limit int) ([]*model.CommentItem, error)
+	CreateSubscribe(sub *model.Subscribe) (*model.Subscribe, error)
+	CancelSubscribe(sub *model.Subscribe) error
+	CheckRoomSubsscribed(room_id, uid int) bool
 }
 
 type RoomAPI struct {
@@ -34,17 +37,7 @@ type RoomCreateForm struct {
 	Dev     bool   `json:"dev" form:"dev" example:"false"`
 }
 
-// swagger:model RoomUpdateForm
-type RoomUpdateForm struct {
-	Id      int    `json:"id" form:"id" binding:"gte=1,required" example:"1"`
-	OwnerId int    `json:"owner_id" form:"owner_id" binding:"required" example:"35"`
-	Title   string `json:"title" form:"title" binding:"required" example:"新名称"`
-	Desc    string `json:"desc" form:"desc" example:"新简介"`
-	Avatar  string `json:"avatar" form:"avatar" example:"https://theshy.cc/img/avatar.png"`
-	Status  int    `json:"status" form:"status" example:"0"`
-	Deleted int    `json:"deleted" form:"deleted" example:"0"`
-}
-
+// @Tags 讨论组
 // @Summary 创建讨论组
 // @Param body body RoomCreateForm true "结构体"
 // @Security ApiKeyAuth
@@ -78,6 +71,7 @@ func (this *RoomAPI) CreateNewRoom(c *gin.Context) {
 	}
 }
 
+// @Tags 讨论组
 // @Summary 获取讨论组信息
 // @Param Authorization header string false "token"
 // @Param id path int true "讨论组ID"
@@ -101,11 +95,23 @@ func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 			} else {
 				room.IsOwner = false
 			}
+			room.Subscribed = this.DB.CheckRoomSubsscribed(id, userInfo.Id)
 		}
 		c.JSON(http.StatusOK, model.Return(20000, room, model.API_SUCCESS))
 	}
 }
 
+type RoomUpdateForm struct {
+	Id      int    `json:"id" form:"id" binding:"gte=1,required" example:"1"`
+	OwnerId int    `json:"owner_id" form:"owner_id" binding:"required" example:"35"`
+	Title   string `json:"title" form:"title" binding:"required" example:"新名称"`
+	Desc    string `json:"desc" form:"desc" example:"新简介"`
+	Avatar  string `json:"avatar" form:"avatar" example:"https://theshy.cc/img/avatar.png"`
+	Status  int    `json:"status" form:"status" example:"0"`
+	Deleted int    `json:"deleted" form:"deleted" example:"0"`
+}
+
+// @Tags 讨论组
 // @Summary 修改讨论组
 // @Description 删除讨论组时deleted=1 此操作不可逆
 // @Param body body RoomUpdateForm true "结构体"
@@ -151,6 +157,7 @@ type CommentCreateForm struct {
 	Attach  string `json:"attach" form:"attach" example:"{}"`
 }
 
+// @Tags 讨论组
 // @Summary 创建发言
 // @Param body body CommentCreateForm true "结构体"
 // @Security ApiKeyAuth
@@ -195,6 +202,7 @@ type CommentQueryForm struct {
 	RoomId int `json:"room_id" form:"room_id" binding:"required"`
 }
 
+// @Tags 讨论组
 // @Summary 获取讨论组历史发言
 // @Param Authorization header string false "token"
 // @Param room_id query string true "讨论组ID"
@@ -229,4 +237,49 @@ func (this *RoomAPI) GetRoomComments(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, model.Return(20000, comments, model.API_SUCCESS))
 	}
+}
+
+type SubscribeForm struct {
+	RoomId int `json:"room_id" form:"room_id" binding:"required" example:"1"`
+	Status int `json:"status" form:"status" binding:"required" example:"1"`
+}
+
+// @Tags 讨论组
+// @Description Status=1订阅 Status=2取消
+// @Summary 订阅(取消)讨论组
+// @Security ApiKeyAuth
+// @Param body body SubscribeForm true "结构体"
+// @Router /api/room/subscribe [post]
+// @Success 200 {object} model.Resp
+func (this *RoomAPI) CreateSubscribe(c *gin.Context) {
+	body := SubscribeForm{}
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, model.Return(40000, nil, err.Error()))
+		return
+	}
+	userInfo := c.MustGet("userInfo")
+	if userInfo == nil {
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
+		return
+	}
+	sub := new(model.Subscribe)
+	sub.Uid = userInfo.(model.User).Id
+	sub.RoomId = body.RoomId
+	if body.Status == 1 {
+		if res, err := this.DB.CreateSubscribe(sub); err != nil {
+			c.JSON(http.StatusOK, model.Return(50000, nil, err.Error()))
+		} else {
+			c.JSON(http.StatusOK, model.Return(20000, res, model.API_SUCCESS))
+		}
+		return
+	}
+	if body.Status == 2 {
+		if err := this.DB.CancelSubscribe(sub); err != nil {
+			c.JSON(http.StatusOK, model.Return(50000, nil, err.Error()))
+		} else {
+			c.JSON(http.StatusOK, model.Return(20000, nil, model.API_SUCCESS))
+		}
+		return
+	}
+	c.JSON(http.StatusBadRequest, model.Return(40000, nil, model.UNHANDLED_ERROR))
 }

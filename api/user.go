@@ -49,6 +49,7 @@ type UserDB interface {
 	GetUserById(id int) (*model.User, error)
 	CheckUserExist(user_id string) bool
 	UpdateUserInfo(user *model.User) (*model.User, error)
+	GetUserSubRooms(uid int) ([]*model.RoomInfo, error)
 }
 
 type UserAPI struct {
@@ -93,6 +94,7 @@ func preHandleUserId(user_id string) (string, error) {
 	return user_id, nil
 }
 
+// @Tags 用户相关
 // @Summary 用户注册
 // @Param body body UserSignForm true "结构体"
 // @Router /api/user/signup [post]
@@ -134,6 +136,7 @@ func (this *UserAPI) UserSignup(c *gin.Context) {
 	}
 }
 
+// @Tags 用户相关
 // @Summary 修改用户信息
 // @Security ApiKeyAuth
 // @Param body body UserUpdateForm true "结构体"
@@ -170,6 +173,7 @@ func (this *UserAPI) UpdateUserInfo(c *gin.Context) {
 	}
 }
 
+// @Tags 用户相关
 // @Summary 用户登录
 // @Param body body UserLoginForm true "结构体"
 // @Router /api/user/login [post]
@@ -206,6 +210,7 @@ func (this *UserAPI) UserLogin(c *gin.Context) {
 	}
 }
 
+// @Tags 用户相关
 // @Summary 获取用户信息
 // @Security ApiKeyAuth
 // @Router /api/user/info [get]
@@ -231,6 +236,26 @@ func (this *UserAPI) GetUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// @Tags 用户相关
+// @Summary 获取用户订阅的直播间
+// @Security ApiKeyAuth
+// @Router /api/user/rooms [get]
+// @Success 200 {object} model.Resp
+func (this *UserAPI) GetUserSubRooms(c *gin.Context) {
+	userInfo := c.MustGet("userInfo")
+	if userInfo == nil {
+		c.JSON(http.StatusOK, model.Return(50000, nil, model.UNHANDLED_ERROR))
+		return
+	}
+	uid := userInfo.(model.User).Id
+	if rooms, err := this.DB.GetUserSubRooms(uid); err != nil {
+		c.JSON(http.StatusOK, model.Return(50000, nil, err.Error()))
+	} else {
+		c.JSON(http.StatusOK, model.Return(20000, rooms, model.API_SUCCESS))
+	}
+}
+
+// @Tags 用户相关
 // @Summary 检查用户名是否可用
 // @Param body body UserCheckForm true "结构体"
 // @Router /api/user/check [post]

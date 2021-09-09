@@ -8,7 +8,6 @@ import (
 	"leekbox/dao"
 	_ "leekbox/docs"
 	"leekbox/utils"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -21,7 +20,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 		UserEvent: &api.UserEvent{},
 	}
 	indexHander := api.IndexAPI{DB: db}
-	streamHander := stream.New(45*time.Second, 15*time.Second, []string{"localhost"})
+	streamHander := stream.New([]string{"localhost"})
 	roomHander := api.RoomAPI{DB: db, Stream: streamHander}
 
 	app := gin.Default()
@@ -43,6 +42,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 		user.POST("/login", userHandler.UserLogin)
 		user.GET("/info", auth.AuthMiddleWare(), userHandler.GetUserInfo)
 		user.PUT("/update", auth.AuthMiddleWare(), userHandler.UpdateUserInfo)
+		user.GET("/rooms", auth.AuthMiddleWare(), userHandler.GetUserSubRooms)
 	}
 	room := app.Group("/api/room")
 	{
@@ -50,6 +50,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 		room.GET("/comments", roomHander.GetRoomComments)
 		room.POST("/create", auth.AuthMiddleWare(), roomHander.CreateNewRoom)
 		room.PUT("/update", auth.AuthMiddleWare(), roomHander.UpdateRoomInfo)
+		room.POST("/subscribe", auth.AuthMiddleWare(), roomHander.CreateSubscribe)
 	}
 	comment := app.Group("/api/comment")
 	{

@@ -39,7 +39,7 @@ func main() {
 	defer recover()
 
 	config := config.Get()
-	tableList := []interface{}{&model.User{}, &model.Room{}, &model.Comment{}}
+	tableList := []interface{}{new(model.User), new(model.Room), new(model.Comment), new(model.Subscribe)}
 	db, err_db := dao.New(*config, tableList)
 	if err_db != nil {
 		panic(fmt.Errorf("数据库初始化失败%s", err_db))

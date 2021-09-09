@@ -10,15 +10,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// writeWait 设置该客户端下一个消息最大写入时长
+// pongWait 允许客户端发出下一个消息的最大时长
+// pingPeriod 客户端发出的心跳检测周期 服务端client对象每ping成功一次会触发PongHandler 延长pongWait 该值必须小于pongWait
+// maxMessageSize 客户端消息的允许最大字节数
 const (
-	// 设置该客户端下一个消息最大写入时长
-	writeWait = 10 * time.Second
-	// 允许客户端发出下一个消息的最大时长
-	pongWait = 60 * time.Second
-	// 客户端发出的心跳检测周期
-	// 服务端client对象每ping成功一次会触发PongHandler 延长pongWait 故该值必须小于pongWait
-	pingPeriod = (pongWait * 9) / 10
-	// 客户端消息的允许最大字节数
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 2048
 )
 

@@ -19,7 +19,7 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 		DB:        db,
 		UserEvent: &api.UserEvent{},
 	}
-	indexHander := api.IndexAPI{DB: db}
+	indexHander := api.IndexAPI{DB: db, Config: &config}
 	streamHander := stream.New([]string{"localhost"})
 	roomHander := api.RoomAPI{DB: db, Stream: streamHander}
 
@@ -28,10 +28,8 @@ func Create(db *dao.GormDB, config config.Configuration) *gin.Engine {
 	app.SetFuncMap(utils.FuncMapUnion)
 	app.LoadHTMLGlob("templates/*.html")
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	app.GET("/version", func(c *gin.Context) {
-		c.JSON(200, config.VERSION)
-	})
 	app.GET("/index", indexHander.Index)
+	app.GET("/version", indexHander.Version)
 
 	// /api开头的接口 有token的话默认取一下token
 	app.Use(auth.AttachToken())

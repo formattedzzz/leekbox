@@ -1,6 +1,7 @@
 package api
 
 import (
+	"leekbox/config"
 	"leekbox/model"
 	"net/http"
 
@@ -12,7 +13,8 @@ type HomeDB interface {
 }
 
 type IndexAPI struct {
-	DB HomeDB
+	DB     HomeDB
+	Config *config.Configuration
 }
 
 func (this *IndexAPI) Index(ctx *gin.Context) {
@@ -30,4 +32,9 @@ func (this *IndexAPI) Index(ctx *gin.Context) {
 	} else {
 		ctx.HTML(http.StatusOK, "index.html", gin.H{"items": users, "userid": userid})
 	}
+}
+
+func (this *IndexAPI) Version(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, this.Config.VERSION)
+	// ctx.Redirect(http.StatusTemporaryRedirect, "https://www.theshy.cc")
 }

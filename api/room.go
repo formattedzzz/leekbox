@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"leekbox/api/stream"
 	"leekbox/model"
 	"net/http"
@@ -83,11 +82,9 @@ func (this *RoomAPI) GetRoomInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, model.Return(40000, nil, model.PARAMS_ERROR))
 		return
 	}
-	fmt.Printf("id: %v\n", id)
 	if room, err := this.DB.GetRoomById(id); err != nil {
 		c.JSON(http.StatusOK, model.Return(40000, nil, err.Error()))
 	} else {
-		// 该接口token为可带可不带
 		if authed, exist := c.Get("authed"); authed.(bool) == true && exist {
 			userInfo := c.MustGet("userInfo").(model.User)
 			if userInfo.Id == room.OwnerId {
@@ -222,7 +219,6 @@ func (this *RoomAPI) GetRoomComments(c *gin.Context) {
 	if query.Page == 0 {
 		query.Page = 1
 	}
-	fmt.Printf("query: %v\n", query)
 	if comments, err := this.DB.GetRoomComments(query.RoomId, query.Page, query.Limit); err != nil {
 		c.JSON(http.StatusInternalServerError, model.Return(50000, query, err.Error()))
 	} else {

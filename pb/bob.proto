@@ -1,0 +1,11 @@
+syntax = "proto3";
+package bob;
+
+option go_package = "leekbox/pb/bob";
+import "leo.proto";
+
+message Like {
+  int64 id = 1;
+  string title = 2;
+  leo.User user = 3;
+}

@@ -11,9 +11,12 @@
 package leo
 
 import (
+	context "context"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	anypb "google.golang.org/protobuf/types/known/anypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -25,55 +28,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CommnetType int32
-
-const (
-	CommnetType_UNKNOWN CommnetType = 0
-	CommnetType_STARTED CommnetType = 1
-	CommnetType_RUNNING CommnetType = 2
-)
-
-// Enum value maps for CommnetType.
-var (
-	CommnetType_name = map[int32]string{
-		0: "UNKNOWN",
-		1: "STARTED",
-		2: "RUNNING",
-	}
-	CommnetType_value = map[string]int32{
-		"UNKNOWN": 0,
-		"STARTED": 1,
-		"RUNNING": 2,
-	}
-)
-
-func (x CommnetType) Enum() *CommnetType {
-	p := new(CommnetType)
-	*p = x
-	return p
-}
-
-func (x CommnetType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CommnetType) Descriptor() protoreflect.EnumDescriptor {
-	return file_leo_proto_enumTypes[0].Descriptor()
-}
-
-func (CommnetType) Type() protoreflect.EnumType {
-	return &file_leo_proto_enumTypes[0]
-}
-
-func (x CommnetType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CommnetType.Descriptor instead.
-func (CommnetType) EnumDescriptor() ([]byte, []int) {
-	return file_leo_proto_rawDescGZIP(), []int{0}
-}
-
 type User struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -81,7 +35,7 @@ type User struct {
 
 	Id     int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Desc   []byte `protobuf:"bytes,3,opt,name=desc,proto3,oneof" json:"desc,omitempty"`
+	Desc   []byte `protobuf:"bytes,3,opt,name=desc,proto3" json:"desc,omitempty"`
 }
 
 func (x *User) Reset() {
@@ -137,184 +91,19 @@ func (x *User) GetDesc() []byte {
 	return nil
 }
 
-type Comment struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id      int64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title   string                `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Content []byte                `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
-	Type    CommnetType           `protobuf:"varint,4,opt,name=type,proto3,enum=leo.CommnetType" json:"type,omitempty"`
-	IdList  []int64               `protobuf:"varint,5,rep,packed,name=id_list,json=idList,proto3" json:"id_list,omitempty"`
-	User    *User                 `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
-	Other   map[string]*anypb.Any `protobuf:"bytes,7,rep,name=other,proto3" json:"other,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Types that are assignable to OptionTarget:
-	//	*Comment_Targeta
-	//	*Comment_Targetb
-	OptionTarget isComment_OptionTarget `protobuf_oneof:"option_target"`
-}
-
-func (x *Comment) Reset() {
-	*x = Comment{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_leo_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Comment) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Comment) ProtoMessage() {}
-
-func (x *Comment) ProtoReflect() protoreflect.Message {
-	mi := &file_leo_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Comment.ProtoReflect.Descriptor instead.
-func (*Comment) Descriptor() ([]byte, []int) {
-	return file_leo_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Comment) GetId() int64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *Comment) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *Comment) GetContent() []byte {
-	if x != nil {
-		return x.Content
-	}
-	return nil
-}
-
-func (x *Comment) GetType() CommnetType {
-	if x != nil {
-		return x.Type
-	}
-	return CommnetType_UNKNOWN
-}
-
-func (x *Comment) GetIdList() []int64 {
-	if x != nil {
-		return x.IdList
-	}
-	return nil
-}
-
-func (x *Comment) GetUser() *User {
-	if x != nil {
-		return x.User
-	}
-	return nil
-}
-
-func (x *Comment) GetOther() map[string]*anypb.Any {
-	if x != nil {
-		return x.Other
-	}
-	return nil
-}
-
-func (m *Comment) GetOptionTarget() isComment_OptionTarget {
-	if m != nil {
-		return m.OptionTarget
-	}
-	return nil
-}
-
-func (x *Comment) GetTargeta() string {
-	if x, ok := x.GetOptionTarget().(*Comment_Targeta); ok {
-		return x.Targeta
-	}
-	return ""
-}
-
-func (x *Comment) GetTargetb() []byte {
-	if x, ok := x.GetOptionTarget().(*Comment_Targetb); ok {
-		return x.Targetb
-	}
-	return nil
-}
-
-type isComment_OptionTarget interface {
-	isComment_OptionTarget()
-}
-
-type Comment_Targeta struct {
-	Targeta string `protobuf:"bytes,8,opt,name=targeta,proto3,oneof"`
-}
-
-type Comment_Targetb struct {
-	Targetb []byte `protobuf:"bytes,9,opt,name=targetb,proto3,oneof"`
-}
-
-func (*Comment_Targeta) isComment_OptionTarget() {}
-
-func (*Comment_Targetb) isComment_OptionTarget() {}
-
 var File_leo_proto protoreflect.FileDescriptor
 
 var file_leo_proto_rawDesc = []byte{
 	0x0a, 0x09, 0x6c, 0x65, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x03, 0x6c, 0x65, 0x6f,
-	0x1a, 0x10, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61, 0x6e, 0x79, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0x51, 0x0a, 0x04, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73,
-	0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x75, 0x73, 0x65,
-	0x72, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x04, 0x64, 0x65, 0x73, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x0c, 0x48, 0x00, 0x52, 0x04, 0x64, 0x65, 0x73, 0x63, 0x88, 0x01, 0x01, 0x42, 0x07, 0x0a, 0x05,
-	0x5f, 0x64, 0x65, 0x73, 0x63, 0x22, 0xef, 0x02, 0x0a, 0x07, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e,
-	0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69,
-	0x64, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x05, 0x74, 0x69, 0x74, 0x6c, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65,
-	0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,
-	0x74, 0x12, 0x24, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32,
-	0x10, 0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6e, 0x65, 0x74, 0x54, 0x79, 0x70,
-	0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x17, 0x0a, 0x07, 0x69, 0x64, 0x5f, 0x6c, 0x69,
-	0x73, 0x74, 0x18, 0x05, 0x20, 0x03, 0x28, 0x03, 0x52, 0x06, 0x69, 0x64, 0x4c, 0x69, 0x73, 0x74,
-	0x12, 0x1d, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09,
-	0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x12,
-	0x2d, 0x0a, 0x05, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17,
-	0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x4f, 0x74, 0x68,
-	0x65, 0x72, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x05, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x12, 0x1a,
-	0x0a, 0x07, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x61, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x48,
-	0x00, 0x52, 0x07, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x61, 0x12, 0x1a, 0x0a, 0x07, 0x74, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x62, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x00, 0x52, 0x07, 0x74,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x62, 0x1a, 0x4e, 0x0a, 0x0a, 0x4f, 0x74, 0x68, 0x65, 0x72, 0x45,
-	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x2a, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x41, 0x6e, 0x79, 0x52, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x42, 0x0f, 0x0a, 0x0d, 0x6f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x2a, 0x34, 0x0a, 0x0b, 0x43, 0x6f, 0x6d, 0x6d, 0x6e,
-	0x65, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57,
-	0x4e, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x54, 0x41, 0x52, 0x54, 0x45, 0x44, 0x10, 0x01,
-	0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x32, 0x30, 0x0a,
-	0x07, 0x47, 0x72, 0x65, 0x65, 0x74, 0x65, 0x72, 0x12, 0x25, 0x0a, 0x08, 0x53, 0x61, 0x79, 0x48,
-	0x65, 0x6c, 0x6c, 0x6f, 0x12, 0x09, 0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x1a,
-	0x0c, 0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x42,
-	0x10, 0x5a, 0x0e, 0x6c, 0x65, 0x65, 0x6b, 0x62, 0x6f, 0x78, 0x2f, 0x70, 0x62, 0x2f, 0x6c, 0x65,
-	0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x43, 0x0a, 0x04, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72,
+	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49,
+	0x64, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x65, 0x73, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x04, 0x64, 0x65, 0x73, 0x63, 0x32, 0x2d, 0x0a, 0x07, 0x47, 0x72, 0x65, 0x65, 0x74, 0x65, 0x72,
+	0x12, 0x22, 0x0a, 0x08, 0x53, 0x61, 0x79, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x12, 0x09, 0x2e, 0x6c,
+	0x65, 0x6f, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x1a, 0x09, 0x2e, 0x6c, 0x65, 0x6f, 0x2e, 0x55, 0x73,
+	0x65, 0x72, 0x22, 0x00, 0x42, 0x10, 0x5a, 0x0e, 0x6c, 0x65, 0x65, 0x6b, 0x62, 0x6f, 0x78, 0x2f,
+	0x70, 0x62, 0x2f, 0x6c, 0x65, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -329,27 +118,18 @@ func file_leo_proto_rawDescGZIP() []byte {
 	return file_leo_proto_rawDescData
 }
 
-var file_leo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_leo_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_leo_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_leo_proto_goTypes = []interface{}{
-	(CommnetType)(0),  // 0: leo.CommnetType
-	(*User)(nil),      // 1: leo.User
-	(*Comment)(nil),   // 2: leo.Comment
-	nil,               // 3: leo.Comment.OtherEntry
-	(*anypb.Any)(nil), // 4: google.protobuf.Any
+	(*User)(nil), // 0: leo.User
 }
 var file_leo_proto_depIdxs = []int32{
-	0, // 0: leo.Comment.type:type_name -> leo.CommnetType
-	1, // 1: leo.Comment.user:type_name -> leo.User
-	3, // 2: leo.Comment.other:type_name -> leo.Comment.OtherEntry
-	4, // 3: leo.Comment.OtherEntry.value:type_name -> google.protobuf.Any
-	1, // 4: leo.Greeter.SayHello:input_type -> leo.User
-	2, // 5: leo.Greeter.SayHello:output_type -> leo.Comment
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0, // 0: leo.Greeter.SayHello:input_type -> leo.User
+	0, // 1: leo.Greeter.SayHello:output_type -> leo.User
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_leo_proto_init() }
@@ -370,41 +150,103 @@ func file_leo_proto_init() {
 				return nil
 			}
 		}
-		file_leo_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Comment); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
-	file_leo_proto_msgTypes[0].OneofWrappers = []interface{}{}
-	file_leo_proto_msgTypes[1].OneofWrappers = []interface{}{
-		(*Comment_Targeta)(nil),
-		(*Comment_Targetb)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_leo_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_leo_proto_goTypes,
 		DependencyIndexes: file_leo_proto_depIdxs,
-		EnumInfos:         file_leo_proto_enumTypes,
 		MessageInfos:      file_leo_proto_msgTypes,
 	}.Build()
 	File_leo_proto = out.File
 	file_leo_proto_rawDesc = nil
 	file_leo_proto_goTypes = nil
 	file_leo_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// GreeterClient is the client API for Greeter service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type GreeterClient interface {
+	SayHello(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
+}
+
+type greeterClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewGreeterClient(cc grpc.ClientConnInterface) GreeterClient {
+	return &greeterClient{cc}
+}
+
+func (c *greeterClient) SayHello(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+	out := new(User)
+	err := c.cc.Invoke(ctx, "/leo.Greeter/SayHello", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GreeterServer is the server API for Greeter service.
+type GreeterServer interface {
+	SayHello(context.Context, *User) (*User, error)
+}
+
+// UnimplementedGreeterServer can be embedded to have forward compatible implementations.
+type UnimplementedGreeterServer struct {
+}
+
+func (*UnimplementedGreeterServer) SayHello(context.Context, *User) (*User, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+}
+
+func RegisterGreeterServer(s *grpc.Server, srv GreeterServer) {
+	s.RegisterService(&_Greeter_serviceDesc, srv)
+}
+
+func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GreeterServer).SayHello(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/leo.Greeter/SayHello",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GreeterServer).SayHello(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Greeter_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "leo.Greeter",
+	HandlerType: (*GreeterServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SayHello",
+			Handler:    _Greeter_SayHello_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "leo.proto",
 }

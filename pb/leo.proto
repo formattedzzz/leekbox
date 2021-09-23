@@ -5,34 +5,33 @@ package leo;
 // 产生的go文件的路径 也就是import时的路径 "leekbox/pb/leo"
 option go_package = "leekbox/pb/leo";
 // 这里google文件夹的相对路径由编译时的命令指定一个或多个根文件夹
-import "google/any.proto";
-
-enum CommnetType {
-  UNKNOWN = 0;
-  STARTED = 1;
-  RUNNING = 2;
-}
+// import "google/any.proto";
 
 message User {
   int64 id = 1;
   string user_id = 2;
-  optional bytes desc = 3;
+  bytes desc = 3;
 }
 
-message Comment {
-  int64 id = 1;
-  string title = 2;
-  bytes content = 3;
-  CommnetType type = 4;
-  repeated int64 id_list = 5;
-  User user = 6;
-  map<string, google.protobuf.Any> other = 7;
-  oneof option_target {
-    string targeta = 8;
-    bytes targetb = 9;
-  }
-}
+// enum CommnetType {
+//   UNKNOWN = 0;
+//   STARTED = 1;
+//   RUNNING = 2;
+// }
+// message Comment {
+//   int64 id = 1;
+//   string title = 2;
+//   bytes content = 3;
+//   CommnetType type = 4;
+//   repeated int64 id_list = 5;
+//   User user = 6;
+//   map<string, google.protobuf.Any> other = 7;
+//   oneof option_target {
+//     string targeta = 8;
+//     bytes targetb = 9;
+//   }
+// }
 
 service Greeter {
-  rpc SayHello (User) returns (Comment) {}
+  rpc SayHello (User) returns (User) {}
 }

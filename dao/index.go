@@ -23,9 +23,9 @@ func New(conf config.Configuration, tableList []interface{}) (*GormDB, error) {
 	if err := db.AutoMigrate(tableList...); err != nil {
 		panic(err)
 	}
-	sqlDB, _ := db.DB()
-	sqlDB.SetConnMaxIdleTime(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	sql_db, _ := db.DB()
+	sql_db.SetConnMaxIdleTime(10)
+	sql_db.SetMaxOpenConns(100)
+	sql_db.SetConnMaxLifetime(time.Hour)
 	return &GormDB{db}, nil
 }

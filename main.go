@@ -7,6 +7,8 @@ import (
 	_ "leekbox/dao"
 	"leekbox/model"
 	"leekbox/router"
+	"log"
+	"os"
 	"time"
 )
 
@@ -14,6 +16,17 @@ var LOC *time.Location
 
 func init() {
 	initLoc()
+	initLog()
+}
+
+func initLog() {
+	logFile, err := os.OpenFile("./leekbox.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.Lshortfile | log.Ltime | log.Ldate)
 }
 
 func initLoc() {

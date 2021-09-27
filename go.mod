@@ -22,6 +22,7 @@ require (
 	github.com/swaggo/gin-swagger v1.3.1
 	github.com/swaggo/swag v1.7.1
 	github.com/ugorji/go v1.2.6 // indirect
+	go.etcd.io/etcd/client/v3 v3.5.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210916014120-12bc252f5db8 // indirect
 	golang.org/x/sys v0.0.0-20210915083310-ed5796bab164 // indirect
@@ -32,5 +33,3 @@ require (
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.13
 )
-
-// github.com/mitchellh/mapstructure

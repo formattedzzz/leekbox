@@ -9,8 +9,8 @@ services:
       - 2379
       - 2380
     ports:
-      - 192.168.100.133:1000:2379
-      - 192.168.100.133:1001:2380
+      - ${LOCIP}:1000:2379
+      - ${LOCIP}:1001:2380
     networks:
       cluster_net:
         ipv4_address: 172.16.238.100
@@ -34,7 +34,7 @@ services:
       - --initial-cluster-state
       - new
       - --initial-cluster-token
-      - docker-etcd
+      - ${TOKEN}
 
   node2:
     image: quay.io/coreos/etcd:v3.4.0
@@ -50,8 +50,8 @@ services:
       - 2379
       - 2380
     ports:
-      - 192.168.100.133:2000:2379
-      - 192.168.100.133:2001:2380
+      - ${LOCIP}:2000:2379
+      - ${LOCIP}:2001:2380
     command:
       - /usr/local/bin/etcd
       - --data-dir=/etcd-data
@@ -70,7 +70,7 @@ services:
       - --initial-cluster-state
       - new
       - --initial-cluster-token
-      - docker-etcd
+      - ${TOKEN}
 
   node3:
     image: quay.io/coreos/etcd:v3.4.0
@@ -86,8 +86,8 @@ services:
       - 2379
       - 2380
     ports:
-      - 192.168.100.133:3000:2379
-      - 192.168.100.133:3001:2380
+      - ${LOCIP}:3000:2379
+      - ${LOCIP}:3001:2380
     command:
       - /usr/local/bin/etcd
       - --data-dir=/etcd-data
@@ -106,7 +106,7 @@ services:
       - --initial-cluster-state
       - new
       - --initial-cluster-token
-      - docker-etcd
+      - ${TOKEN}
 
 volumes:
   node1-data:

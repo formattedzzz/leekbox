@@ -2,9 +2,8 @@ abandom/
 tmp/
 docs/
 .DS_store
+.vscode/.myRedis.redis
 
 test-*
-
-zzz
-
+zeo
 leekbox

@@ -16,3 +16,11 @@ ws.addEventListener('open', ev => {
   }
 })
 ws.addEventListener('error', console.log)
+
+function getElementByXpath(path) {
+  return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+}
+// xpath
+//*[@id="content"]/table[2]/tbody/tr[1]/th[2]
+//*[@id="share_code"]
+// xpath 轴 parent preceding child following 自你以下 也就是文档书写层级中在你下面的 与层级无关

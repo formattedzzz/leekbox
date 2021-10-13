@@ -17,7 +17,7 @@ ws.addEventListener('open', ev => {
 })
 ws.addEventListener('error', console.log)
 
-function getElementByXpath(path) {
+function xp(path) {
   return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
 }
 // xpath
